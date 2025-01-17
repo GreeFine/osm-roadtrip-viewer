@@ -12,31 +12,41 @@ function Map() {
   const [time, setTime] = useState(0);
   const [colors, setColors] = useState(INITIAL_COLORS);
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
-  const depth = useRef();
-  const bbox = useRef();
+  const depth = useRef(5);
+  const bbox = useRef(10_000);
+  const ws = useRef(null);
+  const tripsDataBuffer = useRef([]);
+
+  useEffect(() => {
+    ws.current = new WebSocket("ws://localhost:8080/ws");
+    ws.current.onopen = () => console.log("ws opened");
+    ws.current.onclose = () => console.log("ws closed");
+    ws.current.onmessage = e => {
+      const nodes = JSON.parse(e.data);
+      console.log(`Got data, new nodes: ${nodes.length}, current nodes: ${tripsDataBuffer.current.length}`);
+      tripsDataBuffer.current.push(...nodes);
+
+      setTripsData([...tripsDataBuffer.current]);
+    };
+
+    const wsCurrent = ws.current;
+
+    return () => {
+      wsCurrent.close();
+    };
+  }, []);
+
+
 
   async function mapClick(e, info, radius = null) {
-    const searchParams = new URLSearchParams();
-    console.log(depth.current);
+    const searchParams = {
+      depth: depth.current,
+      bbox: bbox.current,
+      lon: e.coordinate[0],
+      lat: e.coordinate[1],
+    };
 
-    if (depth.current) {
-      searchParams.append("depth", depth.current);
-    }
-    if (bbox.current) {
-      searchParams.append("bbox", bbox.current);
-    }
-    searchParams.append("lon", e.coordinate[0]);
-    searchParams.append("lat", e.coordinate[1]);
-
-    const fetching = `http://localhost:8080/nodes?${searchParams.toString()}`
-    console.log(fetching);
-    const nodes_request = await fetch(fetching);
-    if (nodes_request.ok) {
-      const nodes = await nodes_request.json();
-      setTripsData(() => nodes);
-    } else {
-      console.error("Unable to request nodes: ", nodes_request)
-    }
+    ws.current.send(JSON.stringify(searchParams));
   }
 
   useEffect(() => {
@@ -86,8 +96,8 @@ function Map() {
           noValidate
           autoComplete="off"
         >
-          <TextField onChange={(e) => depth.current = e.target.value} color="secondary" id="depth" label="Max-Depth" variant="outlined" />
-          <TextField onChange={(e) => bbox.current = e.target.value} id="bbox" label="Bounding-Box size" variant="outlined" />
+          <TextField onChange={(e) => depth.current = Number(e.target.value)} type="number" color="secondary" id="depth" label="Max-Depth" variant="outlined" />
+          <TextField onChange={(e) => bbox.current = Number(e.target.value)} type="number" id="bbox" label="Bounding-Box size" variant="outlined" />
         </Box>
       </div>
       <div className="attrib-container"><summary className="maplibregl-ctrl-attrib-button" title="Toggle attribution" aria-label="Toggle attribution"></summary><div className="maplibregl-ctrl-attrib-inner">© <a href="https://carto.com/about-carto/" target="_blank" rel="noopener">CARTO</a>, © <a href="http://www.openstreetmap.org/about/" target="_blank">OpenStreetMap</a> contributors</div></div>
