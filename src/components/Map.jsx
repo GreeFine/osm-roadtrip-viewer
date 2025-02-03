@@ -18,22 +18,18 @@ function Map() {
   const tripsDataBuffer = useRef([]);
 
   useEffect(() => {
-    ws.current = new WebSocket("ws://localhost:8080/ws");
-    ws.current.onopen = () => console.log("ws opened");
-    ws.current.onclose = () => console.log("ws closed");
-    ws.current.onmessage = e => {
-      const nodes = JSON.parse(e.data);
-      console.log(`Got data, new nodes: ${nodes.length}, current nodes: ${tripsDataBuffer.current.length}`);
-      tripsDataBuffer.current.push(...nodes);
+    if (!ws.current) {
+      ws.current = new WebSocket("ws://localhost:8080/ws");
+      ws.current.onopen = () => console.log("ws opened");
+      ws.current.onclose = () => console.log("ws closed");
+      ws.current.onmessage = e => {
+        const nodes = JSON.parse(e.data);
+        console.log(`Got data, new nodes: ${nodes.length}, current nodes: ${tripsDataBuffer.current.length}`);
+        tripsDataBuffer.current.push(...nodes);
 
-      setTripsData([...tripsDataBuffer.current]);
-    };
-
-    const wsCurrent = ws.current;
-
-    return () => {
-      wsCurrent.close();
-    };
+        setTripsData([...tripsDataBuffer.current]);
+      };
+    }
   }, []);
 
 
