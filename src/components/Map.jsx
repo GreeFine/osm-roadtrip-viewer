@@ -13,6 +13,11 @@ import LinearProgress from "@mui/material/LinearProgress";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 
+function getBackendWsUrl() {
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${wsProtocol}//${window.location.host}/api/ws`;
+}
+
 function Map() {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [selectedPoints, setSelectedPoints] = useState([]);
@@ -28,7 +33,7 @@ function Map() {
   // WebSocket setup
   useEffect(() => {
     if (!ws.current) {
-      ws.current = new WebSocket("ws://localhost:5678/ws");
+      ws.current = new WebSocket(getBackendWsUrl());
       ws.current.onopen = () => {
         console.log("ws opened");
         // Fetch roads for initial viewport
