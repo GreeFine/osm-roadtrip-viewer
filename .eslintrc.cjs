@@ -13,7 +13,7 @@ module.exports = {
     rules: {
         "indent": [
             "error",
-            4,
+            2,
             { "SwitchCase": 1 }
         ],
         "quotes": [
